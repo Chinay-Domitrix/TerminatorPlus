@@ -17,71 +17,61 @@ import java.util.Random;
 import java.util.Set;
 
 public abstract class Agent {
+	protected final TerminatorPlus plugin;
+	protected final BotManager manager;
+	protected final BukkitScheduler scheduler;
+	protected final Set<BukkitRunnable> taskList;
+	protected final Random random;
+	protected boolean enabled;
+	protected int taskID;
+	protected boolean drops;
 
-    protected final TerminatorPlus plugin;
-    protected final BotManager manager;
-    protected final BukkitScheduler scheduler;
-    protected final Set<BukkitRunnable> taskList;
-    protected final Random random;
+	public Agent(BotManager manager) {
+		this.plugin = TerminatorPlus.getInstance();
+		this.manager = manager;
+		this.scheduler = Bukkit.getScheduler();
+		this.taskList = new HashSet<>();
+		this.random = new Random();
+		setEnabled(true);
+	}
 
-    protected boolean enabled;
-    protected int taskID;
+	public boolean isEnabled() {
+		return enabled;
+	}
 
-    protected boolean drops;
+	public void setEnabled(boolean b) {
+		enabled = b;
+		if (b) taskID = scheduler.scheduleSyncRepeatingTask(plugin, this::tick, 0, 1);
+		else {
+			scheduler.cancelTask(taskID);
+			stopAllTasks();
+		}
+	}
 
-    public Agent(BotManager manager) {
-        this.plugin = TerminatorPlus.getInstance();
-        this.manager = manager;
-        this.scheduler = Bukkit.getScheduler();
-        this.taskList = new HashSet<>();
-        this.random = new Random();
+	public void stopAllTasks() {
+		if (!taskList.isEmpty()) {
+			taskList.stream().filter(t -> !t.isCancelled()).forEach(BukkitRunnable::cancel);
+			taskList.clear();
+		}
+	}
 
-        setEnabled(true);
-    }
+	public void setDrops(boolean enabled) {
+		this.drops = enabled;
+	}
 
-    public boolean isEnabled() {
-        return enabled;
-    }
+	protected abstract void tick();
 
-    public void setEnabled(boolean b) {
-        enabled = b;
+	public void onFallDamage(BotFallDamageEvent event) { }
 
-        if (b) {
-            taskID = scheduler.scheduleSyncRepeatingTask(plugin, this::tick, 0, 1);
-        } else {
-            scheduler.cancelTask(taskID);
-            stopAllTasks();
-        }
-    }
+	public void onPlayerDamage(BotDamageByPlayerEvent event) { }
 
-    public void stopAllTasks() {
-        if (!taskList.isEmpty()) {
-            taskList.stream().filter(t -> !t.isCancelled()).forEach(BukkitRunnable::cancel);
-            taskList.clear();
-        }
-    }
+	public void onBotDeath(BotDeathEvent event) { }
 
-    public void setDrops(boolean enabled) {
-        this.drops = enabled;
-    }
-
-    protected abstract void tick();
-
-    public void onFallDamage(BotFallDamageEvent event) { }
-
-    public void onPlayerDamage(BotDamageByPlayerEvent event) { }
-
-    public void onBotDeath(BotDeathEvent event) { }
-
-    public void onBotKilledByPlayer(BotKilledByPlayerEvent event) {
-        Player player = event.getPlayer();
-
-        scheduler.runTaskAsynchronously(plugin, () -> {
-            Bot bot = manager.getBot(player);
-
-            if (bot != null) {
-                bot.incrementKills();
-            }
-        });
-    }
+	public void onBotKilledByPlayer(BotKilledByPlayerEvent event) {
+		Player player = event.getPlayer();
+		scheduler.runTaskAsynchronously(plugin, () -> {
+			Bot bot = manager.getBot(player);
+			if (bot != null) bot.incrementKills();
+		});
+	}
 }
