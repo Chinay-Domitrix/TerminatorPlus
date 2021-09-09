@@ -6,64 +6,59 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class NodeConnections {
+	/*
+	 * more node ideas
+	 * how much the bot is to the left or right of target (not horizontal distance)
+	 * bot velocity?
+	 * if the player is temporarily invincible (has damage ticks > 0)
+	 */
+	private final Map<BotDataType, Double> connections;
+	private boolean active;
+	private double value;
 
-    /*
-     * more node ideas
-     * how much the bot is to the left or right of target (not horizontal distance)
-     * bot velocity?
-     * if the player is temporarily invincible (has damage ticks > 0)
-     */
+	public NodeConnections() {
+		this.connections = new HashMap<>();
+		Arrays.stream(BotDataType.values()).forEach(type -> connections.put(type, generateValue()));
+	}
 
-    private final Map<BotDataType, Double> connections;
+	public NodeConnections(Map<BotDataType, Double> values) {
+		this.connections = values;
+	}
 
-    private boolean active;
+	private double generateValue() {
+		return ThreadLocalRandom.current().nextDouble(-10, 10);
+	}
 
-    private double value;
+	public boolean check() {
+		return active;
+	}
 
-    public NodeConnections() {
-        this.connections = new HashMap<>();
+	public double value() {
+		return value;
+	}
 
-        Arrays.stream(BotDataType.values()).forEach(type -> connections.put(type, generateValue()));
-    }
+	public Map<BotDataType, Double> getValues() {
+		return connections;
+	}
 
-    public NodeConnections(Map<BotDataType, Double> values) {
-        this.connections = values;
-    }
+	public double getValue(BotDataType dataType) {
+		return connections.get(dataType);
+	}
 
-    private double generateValue() {
-        return ThreadLocalRandom.current().nextDouble(-10, 10);
-    }
+	/*
+	 * maybe a sinusoidal activation function?
+	 * maybe generate a random activation function?
+	 * definitely something less.. broad
+	 */
+	public void test(BotData data) {
+		this.activationFunction(data);
+		this.active = this.value >= 0.5;
+	}
 
-    public boolean check() {
-        return active;
-    }
-
-    public double value() {
-        return value;
-    }
-
-    public Map<BotDataType, Double> getValues() {
-        return connections;
-    }
-
-    public double getValue(BotDataType dataType) {
-        return connections.get(dataType);
-    }
-
-    /*
-     * maybe a sinusoidal activation function?
-     * maybe generate a random activation function?
-     * definitely something less.. broad
-     */
-    public void test(BotData data) {
-        this.activationFunction(data);
-        this.active = this.value >= 0.5;
-    }
-
-    /*
-     * try sin, sin x^2, cos, cos x^2
-     */
-    private void activationFunction(BotData data) {
-        this.value = Math.tanh(data.getValues().entrySet().stream().mapToDouble(entry -> connections.get(entry.getKey()) * entry.getValue()).sum());
-    }
+	/*
+	 * try sin, sin x^2, cos, cos x^2
+	 */
+	private void activationFunction(BotData data) {
+		this.value = Math.tanh(data.getValues().entrySet().stream().mapToDouble(entry -> connections.get(entry.getKey()) * entry.getValue()).sum());
+	}
 }
