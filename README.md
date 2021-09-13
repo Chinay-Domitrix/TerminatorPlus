@@ -38,4 +38,4 @@ This project is in a very early stage, and we have many more ideas to tackle.
 
 ## License
 
-This project is licensed under [Eclipse Public License](/LICENSE).
+This project is licensed under [Eclipse Public License](LICENSE).
